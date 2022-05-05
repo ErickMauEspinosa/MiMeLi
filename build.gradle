@@ -1,0 +1,43 @@
+plugins {
+	id 'org.springframework.boot' version '2.6.7'
+	id 'io.spring.dependency-management' version '1.0.11.RELEASE'
+	id 'java'
+}
+
+group = 'com.mimeli'
+version = '0.0.1-SNAPSHOT'
+sourceCompatibility = '11'
+
+configurations {
+	compileOnly {
+		extendsFrom annotationProcessor
+	}
+}
+
+repositories {
+	mavenCentral()
+}
+
+dependencies {
+	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+	implementation 'org.springframework.boot:spring-boot-starter-web'
+	compileOnly 'org.projectlombok:lombok'
+	developmentOnly 'org.springframework.boot:spring-boot-devtools'
+	runtimeOnly 'mysql:mysql-connector-java'
+	annotationProcessor 'org.projectlombok:lombok'
+	implementation 'com.google.code.gson:gson:2.7'
+	
+	testImplementation group: 'junit', name: 'junit', version: '4.13.2'
+	testImplementation('org.springframework.boot:spring-boot-starter-test') {
+		exclude group: 'org.mockito'
+	}
+	testImplementation group: 'org.mockito', name: 'mockito-all', version: '1.10.19'
+}
+
+tasks.named('wrapper') {
+	gradleVersion = '7.4.2'
+}
+
+tasks.named('test') {
+	useJUnitPlatform()
+}
