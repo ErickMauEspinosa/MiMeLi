@@ -2,7 +2,8 @@ package co.com.mimeli.service;
 
 import java.math.BigDecimal;
 
-import org.springframework.stereotype.Component;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import com.google.gson.Gson;
@@ -13,13 +14,14 @@ import co.com.mimeli.model.request.CountryInformationRequest;
 import co.com.mimeli.model.response.CountryInformationResponse;
 import co.com.mimeli.repository.ICountryRepository;
 
-@Component
+@Service
 public class CountryService implements ICountryRepository {
+
+	@Autowired
+	RestTemplate template;
 
 	@Override
 	public CountryInformationResponse getCountryInformation(CountryInformationRequest countryInformationRequest) {
-		RestTemplate template = new RestTemplate();
-
 		Gson gson = new Gson();
 		JsonObject result = gson
 				.fromJson(
@@ -35,6 +37,7 @@ public class CountryService implements ICountryRepository {
 		JsonObject resultCountriesCurrency = gsonCurrencies.fromJson(template
 				.getForObject("https://free.currconv.com/api/v7/countries?apiKey=906aa577080d905adb80", String.class),
 				JsonObject.class);
+
 		JsonObject resultCountries = resultCountriesCurrency.getAsJsonObject("results");
 
 		JsonObject resultCountry = resultCountries.getAsJsonObject(countryInfo.getCode());

@@ -1,13 +1,19 @@
 package co.com.mimeli.controller;
 
+import javax.validation.Valid;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.client.RestClientException;
+
+import com.google.gson.JsonSyntaxException;
 
 import co.com.mimeli.model.entity.BlackList;
 import co.com.mimeli.model.request.BlackListRequest;
@@ -18,6 +24,7 @@ import co.com.mimeli.model.Error;
 import co.com.mimeli.service.BlackListService;
 import co.com.mimeli.service.CountryService;
 import co.com.mimeli.util.Constants;
+import co.com.mimeli.util.MyRegex;
 
 @RestController
 @RequestMapping("/api/v1")
@@ -29,22 +36,28 @@ public class GeolocationController {
 	@Autowired
 	private BlackListService blackListService;
 
+	@Autowired
+	private MyRegex myRegex;
+
 	@GetMapping("/blacklist")
 	public ResponseEntity<?> list() {
-		Iterable<?> ipList = null;
-
 		try {
-			ipList = blackListService.findAll();
+			Iterable<?> ipList = blackListService.findAll();
+			return new ResponseEntity<>(ipList, HttpStatus.OK);
 		} catch (Exception e) {
 			return new ResponseEntity<Error>(new Error(Constants.CODE_INTERNAL_SERVER_ERROR, Constants.MESSAGE_ERROR),
 					HttpStatus.INTERNAL_SERVER_ERROR);
 		}
-		return new ResponseEntity<>(ipList, HttpStatus.OK);
 	}
 
 	@PostMapping("/blacklist")
-	public ResponseEntity<?> saveBlackList(@RequestBody BlackListRequest blackListRequest) {
+	public ResponseEntity<?> saveBlackList(@Valid @RequestBody BlackListRequest blackListRequest) {
 		try {
+			if (!myRegex.validateIp(blackListRequest.getIp())) {
+				return new ResponseEntity<Error>(new Error(Constants.CODE_BAD_REQUEST, Constants.IP_NOT_FORMAT),
+						HttpStatus.BAD_REQUEST);
+			}
+
 			if (blackListService.existsById(blackListRequest.getIp())) {
 				return new ResponseEntity<Error>(
 						new Error(Constants.CODE_BAD_REQUEST, Constants.IP_REGISTERED_IN_BLACK_LIST),
@@ -68,6 +81,11 @@ public class GeolocationController {
 	@GetMapping("/country-info")
 	public ResponseEntity<?> getCountryInformation(@RequestBody CountryInformationRequest countryInformationRequest) {
 		try {
+			if (!myRegex.validateIp(countryInformationRequest.getIp())) {
+				return new ResponseEntity<Error>(new Error(Constants.CODE_BAD_REQUEST, Constants.IP_NOT_FORMAT),
+						HttpStatus.BAD_REQUEST);
+			}
+
 			if (blackListService.existsById(countryInformationRequest.getIp())) {
 				return new ResponseEntity<Error>(new Error(Constants.CODE_FORBIDDEN, Constants.IP_NOT_AVAILABLE),
 						HttpStatus.FORBIDDEN);
@@ -75,6 +93,12 @@ public class GeolocationController {
 
 			return new ResponseEntity<CountryInformationResponse>(
 					countryService.getCountryInformation(countryInformationRequest), HttpStatus.OK);
+		} catch (RestClientException e) {
+			return new ResponseEntity<Error>(new Error(Constants.CODE_BAD_GATEWAY, Constants.MESSAGE_ERROR),
+					HttpStatus.BAD_GATEWAY);
+		} catch (JsonSyntaxException e) {
+			return new ResponseEntity<Error>(new Error(Constants.CODE_SERVICE_UNAVAILABLE, Constants.MESSAGE_ERROR),
+					HttpStatus.SERVICE_UNAVAILABLE);
 		} catch (Exception e) {
 			return new ResponseEntity<Error>(new Error(Constants.CODE_INTERNAL_SERVER_ERROR, Constants.MESSAGE_ERROR),
 					HttpStatus.INTERNAL_SERVER_ERROR);

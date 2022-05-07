@@ -1,14 +1,17 @@
 package co.com.mimeli.model.request;
 
+import javax.validation.Valid;
+import javax.validation.constraints.NotBlank;
+
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 @Getter
-@Setter
-@NoArgsConstructor
 @AllArgsConstructor
+@NoArgsConstructor
+@Valid
 public class BlackListRequest {
+	@NotBlank
 	private String ip;
 }
