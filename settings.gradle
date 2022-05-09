@@ -1,1 +1,2 @@
 rootProject.name = 'mimeli'
+include('app')

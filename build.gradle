@@ -2,10 +2,11 @@ plugins {
 	id 'org.springframework.boot' version '2.6.7'
 	id 'io.spring.dependency-management' version '1.0.11.RELEASE'
 	id 'java'
+	id 'application'
 }
 
 group = 'com.mimeli'
-version = '0.0.1-SNAPSHOT'
+version = '1.0.0'
 sourceCompatibility = '11'
 
 configurations {
@@ -33,6 +34,10 @@ dependencies {
 		exclude group: 'org.mockito'
 	}
 	testImplementation group: 'org.mockito', name: 'mockito-all', version: '1.10.19'
+}
+
+application {
+    mainClass = 'co.com.mimeli.MimeliApplication' 
 }
 
 tasks.named('wrapper') {
