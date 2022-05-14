@@ -3,6 +3,7 @@ package co.com.mimeli.service;
 import java.math.BigDecimal;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -10,7 +11,6 @@ import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
-import co.com.mimeli.model.request.CountryInformationRequest;
 import co.com.mimeli.model.response.CountryInformationResponse;
 import co.com.mimeli.repository.ICountryRepository;
 
@@ -21,11 +21,12 @@ public class CountryService implements ICountryRepository {
 	RestTemplate template;
 
 	@Override
-	public CountryInformationResponse getCountryInformation(CountryInformationRequest countryInformationRequest) {
+	@Cacheable(value = "country-cache", key = "'CountryCache'+#ip")
+	public CountryInformationResponse getCountryInformation(String ip) {
 		Gson gson = new Gson();
 		JsonObject result = gson
 				.fromJson(
-						template.getForObject("http://api.ipapi.com/".concat(countryInformationRequest.getIp())
+						template.getForObject("http://api.ipapi.com/".concat(ip)
 								.concat("?access_key=ecbf8e62b479066c40adf804df32d0d5"), String.class),
 						JsonObject.class);
 
@@ -45,7 +46,7 @@ public class CountryService implements ICountryRepository {
 		JsonElement currencyId = resultCountry.get("currencyId");
 		countryInfo.setLocalCurrency(currencyId.getAsString());
 
-		String conversion = currencyId.getAsString().concat("_USD");
+		String conversion = ("USD_").concat(currencyId.getAsString());
 
 		Gson gsonConversion = new Gson();
 		JsonObject resultConvert = gsonConversion

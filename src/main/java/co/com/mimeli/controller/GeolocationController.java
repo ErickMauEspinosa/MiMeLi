@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestClientException;
 
@@ -17,7 +18,6 @@ import com.google.gson.JsonSyntaxException;
 
 import co.com.mimeli.model.entity.BlackList;
 import co.com.mimeli.model.request.BlackListRequest;
-import co.com.mimeli.model.request.CountryInformationRequest;
 import co.com.mimeli.model.response.BlackListResponse;
 import co.com.mimeli.model.response.CountryInformationResponse;
 import co.com.mimeli.model.Error;
@@ -79,20 +79,20 @@ public class GeolocationController {
 	}
 
 	@GetMapping("/country-info")
-	public ResponseEntity<?> getCountryInformation(@RequestBody CountryInformationRequest countryInformationRequest) {
+	public ResponseEntity<?> getCountryInformation(@RequestParam(required = true) String ip) {
 		try {
-			if (!myRegex.validateIp(countryInformationRequest.getIp())) {
+			if (!myRegex.validateIp(ip)) {
 				return new ResponseEntity<Error>(new Error(Constants.CODE_BAD_REQUEST, Constants.IP_NOT_FORMAT),
 						HttpStatus.BAD_REQUEST);
 			}
 
-			if (blackListService.existsById(countryInformationRequest.getIp())) {
+			if (blackListService.existsById(ip)) {
 				return new ResponseEntity<Error>(new Error(Constants.CODE_FORBIDDEN, Constants.IP_NOT_AVAILABLE),
 						HttpStatus.FORBIDDEN);
 			}
 
-			return new ResponseEntity<CountryInformationResponse>(
-					countryService.getCountryInformation(countryInformationRequest), HttpStatus.OK);
+			return new ResponseEntity<CountryInformationResponse>(countryService.getCountryInformation(ip),
+					HttpStatus.OK);
 		} catch (RestClientException e) {
 			return new ResponseEntity<Error>(new Error(Constants.CODE_BAD_GATEWAY, Constants.MESSAGE_ERROR),
 					HttpStatus.BAD_GATEWAY);

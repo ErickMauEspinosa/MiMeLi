@@ -20,7 +20,6 @@ import org.springframework.web.client.RestClientException;
 import com.google.gson.JsonSyntaxException;
 
 import co.com.mimeli.model.request.BlackListRequest;
-import co.com.mimeli.model.request.CountryInformationRequest;
 import co.com.mimeli.model.response.BlackListResponse;
 import co.com.mimeli.model.response.CountryInformationResponse;
 import co.com.mimeli.repository.IBlackListRepository;
@@ -163,11 +162,10 @@ public class GeolocationControllerTest {
 	@Test
 	public void getCountryInformationSuccessful() {
 		when(regex.validateIp(anyString())).thenReturn(true);
-		when(countryService.getCountryInformation(any(CountryInformationRequest.class)))
+		when(countryService.getCountryInformation(anyString()))
 				.thenReturn(new CountryInformationResponse("US", "United States", "USD", BigDecimal.ONE));
 
-		ResponseEntity<?> responseEntity = (ResponseEntity<?>) controller
-				.getCountryInformation(returnCountryInformationRequest());
+		ResponseEntity<?> responseEntity = (ResponseEntity<?>) controller.getCountryInformation(returnIp());
 
 		assertThat(responseEntity).isNotNull();
 		assertThat(((CountryInformationResponse) responseEntity.getBody())).isNotNull();
@@ -189,8 +187,7 @@ public class GeolocationControllerTest {
 	public void getCountryInformationIpNotFormat() {
 		when(regex.validateIp(anyString())).thenReturn(false);
 
-		ResponseEntity<?> responseEntity = (ResponseEntity<?>) controller
-				.getCountryInformation(returnCountryInformationRequest());
+		ResponseEntity<?> responseEntity = (ResponseEntity<?>) controller.getCountryInformation(returnIp());
 
 		assertThat(responseEntity).isNotNull();
 		assertThat(((Error) responseEntity.getBody())).isNotNull();
@@ -207,8 +204,7 @@ public class GeolocationControllerTest {
 		when(regex.validateIp(anyString())).thenReturn(true);
 		when(blackListService.existsById(any(String.class))).thenReturn(true);
 
-		ResponseEntity<?> responseEntity = (ResponseEntity<?>) controller
-				.getCountryInformation(returnCountryInformationRequest());
+		ResponseEntity<?> responseEntity = (ResponseEntity<?>) controller.getCountryInformation(returnIp());
 
 		assertThat(responseEntity).isNotNull();
 		assertThat(((Error) responseEntity.getBody())).isNotNull();
@@ -223,11 +219,9 @@ public class GeolocationControllerTest {
 	@Test
 	public void getCountryInformationRestClientException() {
 		when(regex.validateIp(anyString())).thenReturn(true);
-		when(countryService.getCountryInformation(any(CountryInformationRequest.class)))
-				.thenThrow(new RestClientException("Unanswered"));
+		when(countryService.getCountryInformation(anyString())).thenThrow(new RestClientException("Unanswered"));
 
-		ResponseEntity<?> responseEntity = (ResponseEntity<?>) controller
-				.getCountryInformation(returnCountryInformationRequest());
+		ResponseEntity<?> responseEntity = (ResponseEntity<?>) controller.getCountryInformation(returnIp());
 
 		assertThat(responseEntity).isNotNull();
 		assertThat(((Error) responseEntity.getBody())).isNotNull();
@@ -242,11 +236,10 @@ public class GeolocationControllerTest {
 	@Test
 	public void getCountryInformationJsonSyntaxException() {
 		when(regex.validateIp(anyString())).thenReturn(true);
-		when(countryService.getCountryInformation(any(CountryInformationRequest.class)))
+		when(countryService.getCountryInformation(anyString()))
 				.thenThrow(new JsonSyntaxException("Could not convert to JSON format"));
 
-		ResponseEntity<?> responseEntity = (ResponseEntity<?>) controller
-				.getCountryInformation(returnCountryInformationRequest());
+		ResponseEntity<?> responseEntity = (ResponseEntity<?>) controller.getCountryInformation(returnIp());
 
 		assertThat(responseEntity).isNotNull();
 		assertThat(((Error) responseEntity.getBody())).isNotNull();
@@ -261,11 +254,9 @@ public class GeolocationControllerTest {
 	@Test
 	public void getCountryInformationException() {
 		when(regex.validateIp(anyString())).thenReturn(true);
-		when(countryService.getCountryInformation(any(CountryInformationRequest.class)))
-				.thenThrow(new NullPointerException());
+		when(countryService.getCountryInformation(anyString())).thenThrow(new NullPointerException());
 
-		ResponseEntity<?> responseEntity = (ResponseEntity<?>) controller
-				.getCountryInformation(returnCountryInformationRequest());
+		ResponseEntity<?> responseEntity = (ResponseEntity<?>) controller.getCountryInformation(returnIp());
 
 		assertThat(responseEntity).isNotNull();
 		assertThat(((Error) responseEntity.getBody())).isNotNull();
@@ -281,8 +272,8 @@ public class GeolocationControllerTest {
 		return new BlackListRequest("65.49.22.66");
 	}
 
-	private CountryInformationRequest returnCountryInformationRequest() {
-		return new CountryInformationRequest("65.49.22.66");
+	private String returnIp() {
+		return "65.49.22.66";
 	}
 
 	private Iterable<BlackList> returnBlackLists() {
