@@ -1,0 +1,3 @@
+CREATE TABLE blacklist (
+  ip VARCHAR (15) NOT NULL,
+  PRIMARY KEY (ip));

@@ -5,6 +5,7 @@ public class Constants {
 	public static String IP_REGISTERED_IN_BLACK_LIST = "Blacklisted IP.";
 	public static String IP_NOT_AVAILABLE = "IP not available.";
 	public static String IP_NOT_FORMAT = "Wrong ip format.";
+	public static String COUNTRY_SERVICE_DOWN = "Country information service and currency exchange is down.";
 
 	public static String CODE_BAD_REQUEST = "400";
 	public static String CODE_FORBIDDEN = "403";

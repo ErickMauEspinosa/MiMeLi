@@ -1,0 +1,33 @@
+version: "3"
+
+services:
+  mimeli-service:
+    image: mimeli
+    build: .
+    ports:
+      - 8080:8080
+    links:
+      - mysql-service:mysql-service-db
+    networks:
+      - mimeli-network
+    depends_on: 
+      - mysql-service
+    container_name: mimeli-container
+  mysql-service:
+    image: mysql:8
+    volumes:
+      - ./init:/docker-entrypoint-initdb.d    
+    restart: always
+    ports:
+      - 3306:3306
+    networks:
+      - mimeli-network
+    environment:
+      MYSQL_ROOT_PASSWORD: Espinosa2010
+      MYSQL_DATABASE: meli
+      MYSQL_USER: user
+      MYSQL_PASSWORD: Espinosa2010
+    container_name: mysql-service
+networks:
+  mimeli-network:
+    driver: bridge

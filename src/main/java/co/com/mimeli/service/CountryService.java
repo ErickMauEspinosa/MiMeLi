@@ -3,6 +3,7 @@ package co.com.mimeli.service;
 import java.math.BigDecimal;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -18,43 +19,42 @@ import co.com.mimeli.repository.ICountryRepository;
 public class CountryService implements ICountryRepository {
 
 	@Autowired
-	RestTemplate template;
+	private RestTemplate template;
+
+	@Value("${endpoint-service.ip-service.url}")
+	private String ipInformationApi;
+
+	@Value("${endpoint-service.country-service.url}")
+	private String countriesApi;
+
+	@Value("${endpoint-service.currency-conversion-service.url}")
+	private String conversionCurrencyApi;
 
 	@Override
 	@Cacheable(value = "country-cache", key = "'CountryCache'+#ip")
 	public CountryInformationResponse getCountryInformation(String ip) {
-		Gson gson = new Gson();
-		JsonObject result = gson
-				.fromJson(
-						template.getForObject("http://api.ipapi.com/".concat(ip)
-								.concat("?access_key=ecbf8e62b479066c40adf804df32d0d5"), String.class),
-						JsonObject.class);
+		JsonObject result = getJsonObjectByUrl((String.format(ipInformationApi, ip)));
+
+		JsonObject resultCountriesCurrency = getJsonObjectByUrl(countriesApi);
+		JsonObject resultCountries = resultCountriesCurrency.getAsJsonObject("results");
+		JsonObject resultCountry = resultCountries.getAsJsonObject(result.get("country_code").getAsString());
+
+		JsonElement currencyId = resultCountry.get("currencyId");
+		String conversion = String.format("USD_%s", currencyId.getAsString());
+		JsonObject resultConvert = getJsonObjectByUrl(String.format(conversionCurrencyApi, conversion));
 
 		CountryInformationResponse countryInfo = new CountryInformationResponse();
 		countryInfo.setCode(result.get("country_code").getAsString());
 		countryInfo.setCountryName(result.get("country_name").getAsString());
-
-		Gson gsonCurrencies = new Gson();
-		JsonObject resultCountriesCurrency = gsonCurrencies.fromJson(template
-				.getForObject("https://free.currconv.com/api/v7/countries?apiKey=906aa577080d905adb80", String.class),
-				JsonObject.class);
-
-		JsonObject resultCountries = resultCountriesCurrency.getAsJsonObject("results");
-
-		JsonObject resultCountry = resultCountries.getAsJsonObject(countryInfo.getCode());
-
-		JsonElement currencyId = resultCountry.get("currencyId");
 		countryInfo.setLocalCurrency(currencyId.getAsString());
-
-		String conversion = ("USD_").concat(currencyId.getAsString());
-
-		Gson gsonConversion = new Gson();
-		JsonObject resultConvert = gsonConversion
-				.fromJson(template.getForObject("https://free.currconv.com/api/v7/convert?q=".concat(conversion)
-						.concat("&compact=ultra&apiKey=906aa577080d905adb80"), String.class), JsonObject.class);
 		countryInfo.setCurrentValue(new BigDecimal(resultConvert.get(conversion).getAsString()));
 
 		return countryInfo;
+	}
+
+	private JsonObject getJsonObjectByUrl(String url) {
+		Gson gson = new Gson();
+		return gson.fromJson(template.getForObject(url, String.class), JsonObject.class);
 	}
 
 }

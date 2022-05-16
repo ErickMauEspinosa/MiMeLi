@@ -12,7 +12,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.client.RestClientException;
 
 import com.google.gson.JsonSyntaxException;
 
@@ -25,6 +24,7 @@ import co.com.mimeli.service.BlackListService;
 import co.com.mimeli.service.CountryService;
 import co.com.mimeli.util.Constants;
 import co.com.mimeli.util.MyRegex;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 
 @RestController
 @RequestMapping("/api/v1")
@@ -79,6 +79,7 @@ public class GeolocationController {
 	}
 
 	@GetMapping("/country-info")
+	@CircuitBreaker(name = "countryService", fallbackMethod = "countryFallback")
 	public ResponseEntity<?> getCountryInformation(@RequestParam(required = true) String ip) {
 		try {
 			if (!myRegex.validateIp(ip)) {
@@ -93,15 +94,14 @@ public class GeolocationController {
 
 			return new ResponseEntity<CountryInformationResponse>(countryService.getCountryInformation(ip),
 					HttpStatus.OK);
-		} catch (RestClientException e) {
-			return new ResponseEntity<Error>(new Error(Constants.CODE_BAD_GATEWAY, Constants.MESSAGE_ERROR),
-					HttpStatus.BAD_GATEWAY);
 		} catch (JsonSyntaxException e) {
 			return new ResponseEntity<Error>(new Error(Constants.CODE_SERVICE_UNAVAILABLE, Constants.MESSAGE_ERROR),
 					HttpStatus.SERVICE_UNAVAILABLE);
-		} catch (Exception e) {
-			return new ResponseEntity<Error>(new Error(Constants.CODE_INTERNAL_SERVER_ERROR, Constants.MESSAGE_ERROR),
-					HttpStatus.INTERNAL_SERVER_ERROR);
 		}
+	}
+
+	public ResponseEntity<?> countryFallback(Exception e) {
+		return new ResponseEntity<Error>(new Error(Constants.CODE_BAD_GATEWAY, Constants.COUNTRY_SERVICE_DOWN),
+				HttpStatus.BAD_GATEWAY);
 	}
 }

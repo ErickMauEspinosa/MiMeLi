@@ -15,7 +15,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.client.RestClientException;
 
 import com.google.gson.JsonSyntaxException;
 
@@ -217,23 +216,6 @@ public class GeolocationControllerTest {
 	}
 
 	@Test
-	public void getCountryInformationRestClientException() {
-		when(regex.validateIp(anyString())).thenReturn(true);
-		when(countryService.getCountryInformation(anyString())).thenThrow(new RestClientException("Unanswered"));
-
-		ResponseEntity<?> responseEntity = (ResponseEntity<?>) controller.getCountryInformation(returnIp());
-
-		assertThat(responseEntity).isNotNull();
-		assertThat(((Error) responseEntity.getBody())).isNotNull();
-
-		assertThat(((Error) responseEntity.getBody()).getCode()).isNotNull();
-		assertThat(((Error) responseEntity.getBody()).getCode()).isEqualTo(Constants.CODE_BAD_GATEWAY);
-
-		assertThat(((Error) responseEntity.getBody()).getMessage()).isNotNull();
-		assertThat(((Error) responseEntity.getBody()).getMessage()).isEqualTo(Constants.MESSAGE_ERROR);
-	}
-
-	@Test
 	public void getCountryInformationJsonSyntaxException() {
 		when(regex.validateIp(anyString())).thenReturn(true);
 		when(countryService.getCountryInformation(anyString()))
@@ -250,22 +232,24 @@ public class GeolocationControllerTest {
 		assertThat(((Error) responseEntity.getBody()).getMessage()).isNotNull();
 		assertThat(((Error) responseEntity.getBody()).getMessage()).isEqualTo(Constants.MESSAGE_ERROR);
 	}
-
+	
 	@Test
-	public void getCountryInformationException() {
+	public void countryFallback() {
 		when(regex.validateIp(anyString())).thenReturn(true);
-		when(countryService.getCountryInformation(anyString())).thenThrow(new NullPointerException());
-
-		ResponseEntity<?> responseEntity = (ResponseEntity<?>) controller.getCountryInformation(returnIp());
+		when(countryService.getCountryInformation(anyString()))
+				.thenThrow(new JsonSyntaxException("Could not convert to JSON format"));
+		
+		Exception e = null;
+		ResponseEntity<?> responseEntity = (ResponseEntity<?>) controller.countryFallback(e);
 
 		assertThat(responseEntity).isNotNull();
 		assertThat(((Error) responseEntity.getBody())).isNotNull();
 
 		assertThat(((Error) responseEntity.getBody()).getCode()).isNotNull();
-		assertThat(((Error) responseEntity.getBody()).getCode()).isEqualTo(Constants.CODE_INTERNAL_SERVER_ERROR);
+		assertThat(((Error) responseEntity.getBody()).getCode()).isEqualTo(Constants.CODE_BAD_GATEWAY);
 
 		assertThat(((Error) responseEntity.getBody()).getMessage()).isNotNull();
-		assertThat(((Error) responseEntity.getBody()).getMessage()).isEqualTo(Constants.MESSAGE_ERROR);
+		assertThat(((Error) responseEntity.getBody()).getMessage()).isEqualTo(Constants.COUNTRY_SERVICE_DOWN);
 	}
 
 	private BlackListRequest returnBlackListRequest() {
